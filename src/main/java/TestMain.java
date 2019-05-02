@@ -9,7 +9,7 @@ public class TestMain {
     public static void main(String[] args) throws IOException {
         String fileName = "C:\\Users\\alepeshko\\Pictures\\123.bmp";
         BufferedImage image = ImageIO.read(new File(fileName));
-
+        List<int[]> images = new ArrayList<>();
         int[][] arrays = ImageUtils.getBW(image);
 
         int[][] newImage;
@@ -21,16 +21,11 @@ public class TestMain {
                     newImage[x - result[0]][j - result[2]] = arrays[x][j];
                 }
             }
-
             ImageUtils.printImageInStackTrace(newImage);
 
-            ImageUtils.printImageInStackTrace(newImage);
 
         }
-
-
     }
-
 
 
     public static List<int[]> segment(int[][] image) {

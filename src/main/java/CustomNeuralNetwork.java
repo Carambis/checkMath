@@ -1,4 +1,3 @@
-
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -11,7 +10,7 @@ public class CustomNeuralNetwork {
     private static final int COUNT_LEARN = 10;
     private static final int SIZE_IMAGE = 9900;
     private static final int NUMBER_SET = 3;
-    private static final int BIAS = 5;
+    private static final int BIAS = 13;
     private static final String PATH = "src\\main\\resources\\study_file\\";
     private static final String PATH_TO_WEIGHTS = "src\\main\\resources\\weight";
     private static final String PATH_TEST = "src\\main\\resources\\test_file\\";
@@ -20,22 +19,9 @@ public class CustomNeuralNetwork {
     private static Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) throws IOException {
-        List<int[]> weightList = new ArrayList<>();
-        try {
-            for (int i = 0; i < COUNT_LEARN; i++) {
-                weightList.add(readFile(i));
-            }
-        }catch (FileNotFoundException e){
-            weightList = learn();
-        }
-
-//        while (true) {
-        try {
-            test(weightList);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-//        }
+        List<SymbolWeight> weightList = new ArrayList<>();
+        weightList = learn();
+        test(weightList);
     }
 
     private static boolean proceed(int[] number, int[] weights) {
@@ -64,8 +50,8 @@ public class CustomNeuralNetwork {
 
     private static int[] readImage(String fileName) throws IOException {
         BufferedImage image = ImageIO.read(new File(fileName));
-        int[][] arrays = getBW(image);
-        arrays = renderImage(arrays);
+        int[][] arrays = ImageUtils.getBW(image);
+        arrays = ImageUtils.deleteWhiteLine(arrays);
 
         BufferedImage bi = new BufferedImage(arrays[0].length, arrays.length, BufferedImage.TYPE_INT_RGB);
         for (int i = 0; i < arrays.length; i++) {
@@ -84,7 +70,7 @@ public class CustomNeuralNetwork {
         g.drawImage(bi, 0, 0, 90, 110, null);
         g.dispose();
 
-        arrays = getBW(scaled);
+        arrays = ImageUtils.getBW(scaled);
 
         int[] points = new int[arrays.length * arrays[0].length];
         int k = 0;
@@ -98,40 +84,48 @@ public class CustomNeuralNetwork {
         return points;
     }
 
-    private static List<int[]> learn() throws IOException {
+    private static List<SymbolWeight> learn() throws IOException {
         System.out.println("Start learning");
-        List<int[]> weightList = new ArrayList<>();
-        List<int[]> list = new ArrayList<>();
-        for (int i = 0; i < COUNT_LEARN; i++) {
-            for (int j = 0; j < NUMBER_SET; j++) {
-                list.add(readImage(PATH + i + "" + j + PNG));
-            }
-        }
-        for (int k = 0; k < COUNT_LEARN; k++) {
+        List<SymbolWeight> weightList = new ArrayList<>();
+        List<ImageSymbols> listImage = new ArrayList<>();
+        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Pictures\\-.bmp"), "-"));
+        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Pictures\\+.bmp"), "+"));
+        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Pictures\\2.bmp"), "2"));
+        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Pictures\\a.bmp"), "a"));
+        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Pictures\\b.bmp"), "b"));
+        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Pictures\\c.bmp"), "c"));
+        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Pictures\\x.bmp"), "x"));
+        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Pictures\\y.bmp"), "y"));
+        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Pictures\\z.bmp"), "z"));
+
+
+        String[] symbols = new String[]{"-", "+", "2", "a", "b", "c", "x", "y", "z",};
+        for (String symbol : symbols) {
             int[] weights = new int[SIZE_IMAGE];
-            for (int i = 0; i < 10000; i++) {
-                for (int j = 0; j < list.size(); j++) {
-                    int[] number = list.get(j);
-                    if (j / NUMBER_SET != k) {
-                        if (proceed(number, weights)) {
-                            decrease(number, weights);
+            for (int i = 0; i < 2000; i++) {
+                for (ImageSymbols imageSymbols : listImage) {
+                    if (!imageSymbols.symbol.equals(symbol)) {
+                        if (proceed(imageSymbols.image, weights)) {
+                            System.out.println("Symol - " + symbol + " iteration - " + i + "decrease");
+                            decrease(imageSymbols.image, weights);
                         }
                     } else {
-                        if (!proceed(number, weights)) {
-                            increase(number, weights);
+                        if (!proceed(imageSymbols.image, weights)) {
+                            System.out.println("Symol - " + symbol + " iteration - " + i + "increase");
+                            increase(imageSymbols.image, weights);
                         }
                     }
                 }
-            }
-            writeFile(weights, k);
-            weightList.add(weights);
-        }
 
+            }
+            writeFile(weights, symbol);
+            weightList.add(new SymbolWeight(symbol, weights));
+        }
         System.out.println("Finish");
         return weightList;
     }
 
-    private static void writeFile(int[] weights, int number) throws IOException {
+    private static void writeFile(int[] weights, String number) throws IOException {
         FileWriter fileWriter = new FileWriter(new File(PATH_TO_WEIGHTS + number + TXT));
         for (int weight : weights) {
             fileWriter.append(String.valueOf(weight));
@@ -154,111 +148,62 @@ public class CustomNeuralNetwork {
         return weights;
     }
 
-    private static void test(List<int[]> weightList) throws IOException {
-        System.out.println("Input number");
-        String string ="90";
+    private static void test(List<SymbolWeight> weightList) throws IOException {
+        String fileName = "C:\\Users\\alepeshko\\Pictures\\123.bmp";
+        BufferedImage image = ImageIO.read(new File(fileName));
+        List<int[]> images = new ArrayList<>();
+        int[][] arrays = ImageUtils.getBW(image);
+        List<int[]> results = TestMain.segment(arrays);
+        for (int[] result : results) {
+            int[][] newImage = new int[result[1] - result[0]][result[3] - result[2]];
+            for (int x = result[0]; x < result[1]; x++) {
+                for (int j = result[2]; j < result[3]; j++) {
+                    newImage[x - result[0]][j - result[2]] = arrays[x][j];
+                }
+            }
 
-        int number = -1;
-        switch (string) {
-            case "2":
-            case "5":
-            case "32":
-            case "90":
-                int[] image = readImage(PATH_TEST + string + PNG);
-                for (int i = 0; i < weightList.size(); i++) {
-                    if (proceed(image, weightList.get(i))) {
-                        number = i;
+            ImageUtils.printImageInStackTrace(newImage);
+
+            BufferedImage bi = new BufferedImage(newImage[0].length, newImage.length, BufferedImage.TYPE_INT_RGB);
+            for (int i = 0; i < newImage.length; i++) {
+                for (int j = 0; j < newImage[i].length; j++) {
+                    if (newImage[i][j] == 1) {
+                        bi.setRGB(j, i, 0);
+                    } else {
+                        bi.setRGB(j, i, 1);
                     }
                 }
-                if (number != -1) {
-                    System.out.println("This image = " + number);
-                } else {
-                    System.out.println("I'm stupid robot");
+            }
+
+            BufferedImage scaled = new BufferedImage(90, 110,
+                    BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = scaled.createGraphics();
+            g.drawImage(bi, 0, 0, 90, 110, null);
+            g.dispose();
+
+            newImage = ImageUtils.getBW(scaled);
+
+            ImageUtils.printImageInStackTrace(newImage);
+
+            int[] points = new int[newImage.length * newImage[0].length];
+            int k = 0;
+            for (int[] array : newImage) {
+                for (int anArray : array) {
+                    points[k] = anArray;
+                    k++;
                 }
-                break;
-            default:
-                System.out.println("Incorrect number");
+            }
+            images.add(points);
         }
-    }
-
-    private static int[][] renderImage(int[][] image) {
-        while (checkRow(image, 0)) {
-            deleteFirstRow(image);
-        }
-        while (checkRow(image, image.length - 1)) {
-            image = deleteLastRow(image);
-        }
-        while (checkColumn(image, 0)) {
-            deleteLeftColumn(image);
-        }
-        while (checkColumn(image, image[0].length - 1)) {
-            image = deleteRightColumn(image);
-        }
-        return image;
-    }
-
-    private static boolean checkRow(int[][] image, int row) {
-        int width = image[row].length;
-        for (int i = 0; i < width; i++) {
-            if (image[row][i] == 1) {
-                return false;
+        for (int[] imageByte : images) {
+            for (SymbolWeight weight : weightList) {
+                if (proceed(imageByte, weight.getWeight())) {
+                    System.out.println("Symbol - " + weight.getNameSymbol());
+                    break;
+                }
             }
         }
-        return true;
     }
 
-    private static boolean checkColumn(int[][] image, int column) {
-        for (int[] anImage : image) {
-            if (anImage[column] == 1) {
-                return false;
-            }
-        }
-        return true;
-    }
 
-    private static int[][] deleteFirstRow(int[][] image) {
-        if (image.length - 1 >= 0) {
-            System.arraycopy(image, 1, image, 0, image.length - 1);
-        }
-        return image;
-    }
-
-    private static int[][] deleteLastRow(int[][] image) {
-        int[][] newImage = new int[image.length - 1][image[0].length];
-        System.arraycopy(image, 0, newImage, 0, newImage.length);
-        return newImage;
-    }
-
-    private static int[][] deleteLeftColumn(int[][] image) {
-        for (int[] anImage : image) {
-            if (image[0].length - 1 >= 0) {
-                System.arraycopy(anImage, 1, anImage, 0, image[0].length - 1);
-            }
-        }
-        return image;
-    }
-
-    private static int[][] deleteRightColumn(int[][] image) {
-        int[][] newImage = new int[image.length][image[0].length - 1];
-        for (int i = 0; i < newImage.length; i++) {
-            if (newImage[0].length - 1 >= 0) {
-                System.arraycopy(image[i], 0, newImage[i], 0, newImage[0].length);
-            }
-        }
-        return newImage;
-    }
-
-    private static int[][] getBW(BufferedImage image) {
-        int height = image.getHeight();
-        int width = image.getWidth();
-        int[][] arrays = new int[height][width];
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-                int rgb = image.getRGB(j, i);
-                Color color = new Color((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
-                arrays[i][j] = color.equals(Color.BLACK) ? 1 : 0;
-            }
-        }
-        return arrays;
-    }
 }
