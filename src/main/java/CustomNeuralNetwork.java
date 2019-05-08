@@ -88,15 +88,15 @@ public class CustomNeuralNetwork {
         System.out.println("Start learning");
         List<SymbolWeight> weightList = new ArrayList<>();
         List<ImageSymbols> listImage = new ArrayList<>();
-        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Pictures\\-.bmp"), "-"));
-        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Pictures\\+.bmp"), "+"));
-        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Pictures\\2.bmp"), "2"));
-        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Pictures\\a.bmp"), "a"));
-        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Pictures\\b.bmp"), "b"));
-        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Pictures\\c.bmp"), "c"));
-        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Pictures\\x.bmp"), "x"));
-        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Pictures\\y.bmp"), "y"));
-        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Pictures\\z.bmp"), "z"));
+        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Desktop\\Diplom Lepeshko\\-.bmp"), "-"));
+        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Desktop\\Diplom Lepeshko\\+.bmp"), "+"));
+        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Desktop\\Diplom Lepeshko\\2.bmp"), "2"));
+        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Desktop\\Diplom Lepeshko\\a.bmp"), "a"));
+        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Desktop\\Diplom Lepeshko\\b.bmp"), "b"));
+        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Desktop\\Diplom Lepeshko\\c.bmp"), "c"));
+        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Desktop\\Diplom Lepeshko\\x.bmp"), "x"));
+        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Desktop\\Diplom Lepeshko\\y.bmp"), "y"));
+        listImage.add(new ImageSymbols(readImage("C:\\Users\\alepeshko\\Desktop\\Diplom Lepeshko\\z.bmp"), "z"));
 
 
         String[] symbols = new String[]{"-", "+", "2", "a", "b", "c", "x", "y", "z",};
@@ -149,7 +149,7 @@ public class CustomNeuralNetwork {
     }
 
     private static void test(List<SymbolWeight> weightList) throws IOException {
-        String fileName = "C:\\Users\\alepeshko\\Pictures\\123.bmp";
+        String fileName = "C:\\Users\\alepeshko\\Desktop\\Diplom Lepeshko\\formula1.bmp";
         BufferedImage image = ImageIO.read(new File(fileName));
         List<int[]> images = new ArrayList<>();
         int[][] arrays = ImageUtils.getBW(image);
@@ -195,14 +195,28 @@ public class CustomNeuralNetwork {
             }
             images.add(points);
         }
+        StringBuilder stringBuilder = new StringBuilder();
         for (int[] imageByte : images) {
             for (SymbolWeight weight : weightList) {
                 if (proceed(imageByte, weight.getWeight())) {
-                    System.out.println("Symbol - " + weight.getNameSymbol());
+                    String symb = weight.getNameSymbol();
+                    if (stringBuilder.length() != 0) {
+                        String lastSymb = String.valueOf(stringBuilder.charAt(stringBuilder.length() - 1));
+                        if (symb.equals("-") && lastSymb.equals("-")) {
+                            stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+                            stringBuilder.append("=");
+                        }else{
+                            stringBuilder.append(symb);
+                        }
+                    }else {
+                        stringBuilder.append(symb);
+
+                    }
                     break;
                 }
             }
         }
+        System.out.println(stringBuilder.toString());
     }
 
 
